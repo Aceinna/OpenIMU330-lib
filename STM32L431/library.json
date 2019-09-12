@@ -1,0 +1,12 @@
+{
+	"name": "STM32L431",
+ 	"version": "1.0.2",
+ 	"description": "STM32L431 MCU Low Level Library",
+ 	"build": {
+ 		"flags": [
+			"-I Inc",
+			"-I CMSIS",
+			"-I ."
+ 		]
+ 	}
+ }

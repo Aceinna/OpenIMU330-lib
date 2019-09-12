@@ -1,0 +1,18 @@
+{
+	"name": "Platform",
+ 	"version": "1.0.4",
+ 	"description": "OpenIMU330 and IMU383 Platform Library",
+ 	"build": {
+ 		"flags": [
+			"-I Filter",
+			"-I Filter/include",
+			"-I Board",
+			"-I Board/include",
+			"-I Core",
+			"-I Core/include",
+			"-I ."
+ 		],
+		"libArchive": false,
+		"platforms": "aceinna_imu"
+ 	}
+ }
