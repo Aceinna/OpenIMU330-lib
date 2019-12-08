@@ -212,15 +212,13 @@ typedef struct {
     uint16_t           usedChips;                                               // 0x0043
 
     uint16_t           usedSensors[16];                                         // 0x44 - 0x53
-    uint16_t           rsvd1[24];
-    uint16_t           rsvd2[46];
-    uint16_t           rsvd3; 
-    uint16_t           rsvd4; 
-    uint16_t           rsvd5; 
-} ConfigurationStruct;
+    uint16_t           accelRange;                                              // 0x54
+    uint16_t           gyroRange;                                               // 0x55
+    uint16_t           rsvd[71];
+} FactoryConfigurationStruct;
 #pragma pack()
 
-extern ConfigurationStruct gConfiguration;
+extern FactoryConfigurationStruct gConfiguration;
 
 
 typedef struct {

@@ -72,9 +72,13 @@ void    platformSetInvalidCalStatus();
 void    platformInitBITStatus();    
 uint32_t  platformGetIMUCounter();
 void    platformEnableExternalSync();
+BOOL    platformActivateExternalSync(int freq);
 #define   kick_dog()
 uint16_t platformGetParam(uint16_t offset);
 uint64_t platformGetSolutionTstamp();
+double   platformGetSolutionTstampAsDouble();
+BOOL     platformSetUserSerialPort(int port);
+BOOL     platformInitUserSerialPort(int rate);
 
 #define UART_CHANNEL_NONE -1  // undefined channel
 #define UART_CHANNEL_0     0  // pins 3 and 4 on the 20-pin connector. NOTE: not available in SPI interface mode

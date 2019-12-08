@@ -28,7 +28,7 @@ limitations under the License.
 #include "ucb_packet.h"
 #include <stdint.h>
 
-extern BOOL   	CheckPortUsage 			  (ConfigurationStruct *proposedConfiguration) ;
+extern BOOL   	CheckPortUsage 			  (FactoryConfigurationStruct *proposedConfiguration) ;
 extern BOOL   	CheckPortBaudRate 		  (uint16_t portBaudRate) ;
 extern BOOL   	CheckPacketRateDivider	  (uint16_t packetRateDivider) ;
 extern BOOL		  CheckContPacketRate       (UcbPacketType outputPacket, uint16_t baudRate, uint16_t packetRateDivider) ;
@@ -70,7 +70,7 @@ extern void		  SetFieldData			  (void) ;
 #define REMOTE_MAG_SER_NO_FIELD_ID_1  		  0x002A
 #define ECU_ADDRESS_FIELD_ID                0x0032
 #define ECU_BAUD_RATE_FIELD_ID              0x0033
-#define UPPER_CONFIG_ADDR_BOUND				      0x0054	///< upper configuration address boundary
+#define UPPER_CONFIG_ADDR_BOUND				      0x0080	///< upper configuration address boundary
 
 #define PRODUCT_CONFIGURATION_FIELD_ID		0x071C	///< outside of configuration, but needs to be read as a field
 

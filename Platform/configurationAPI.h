@@ -61,8 +61,10 @@ void     configSetGpsProtocol(int protocol);
 int      configGetNextGpsBaudRate(int baudRate);
 
 // SPI bus related functions
-uint16_t configGetSensorFilterTypeForSPI();
-void     configSetSensorFilterTypeForSPI(uint16_t type);
+void     configSetRateSensorFilterTypeForSPI(uint16_t type);
+void     configSetAccelSensorFilterTypeForSPI(uint16_t type);
+uint16_t configGetRateSensorFilterTypeForSPI();
+uint16_t configGetAccelSensorFilterTypeForSPI();
 
 // CAN bus related parameters
 BOOL     configSaveEcuAddress(uint16_t* address);
@@ -77,4 +79,9 @@ uint16_t configGetPacketRateDividorForSPI();
 void     ApplyFactoryConfiguration();
 void     configSetUsedChips(uint8_t mask);
 void     configDisableSensors(int chipNum, uint16_t mask);
+int      configGetAccelRange();
+int      configGetGyroRange();
+BOOL     configSetAccelRange(int *range, BOOL fApply);
+BOOL     configSetGyroRange(int *range, BOOL fApply);
+
 #endif

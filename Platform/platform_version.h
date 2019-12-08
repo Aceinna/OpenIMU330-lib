@@ -37,7 +37,7 @@ limitations under the License.
 #define VERSION_MINOR_NUM 1
 #define VERSION_PATCH_NUM 1
 #define VERSION_STAGE_NUM 0
-#define VERSION_BUILD_NUM 1
+#define VERSION_BUILD_NUM 4
 
 /// Software-version/part-number
 // changing the version number changes the CRC for the EEPROM memory so to avoid
@@ -49,9 +49,9 @@ limitations under the License.
 //                           12345678901234567890
 
 #ifdef   IMU383
-#define  SOFTWARE_PART      "5020-1398-01 1.1.1"   // 383  
+#define  SOFTWARE_PART      "5020-1398-01 1.1.4"   // 383  
 #else
-#define  SOFTWARE_PART      "5020-1800-01 1.1.1"   // 330
+#define  SOFTWARE_PART      "5020-1800-01 1.1.4"   // 330
 #endif
 
 

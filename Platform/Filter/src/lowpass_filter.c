@@ -75,7 +75,7 @@ static const int64_t b_q27[4][2][7] = { { { 504,  7526,  55908,  388989,  711409
  * @retval  TRUE: the filter reached steady state, output valid
  *          FALSE the filter has not reached steady state, input copied to output
  ******************************************************************************/
-uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis(uint8_t axis, int16_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
+uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis(uint8_t axis, int32_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
 {
     static uint8_t initFilt[3] = {1,1,1};
 
@@ -125,7 +125,7 @@ uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis(uint8_t axis, int16_t in, int32_t *o
 }
 
 
-uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis(uint8_t axis, int16_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
+uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis(uint8_t axis, int32_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
 {
     static uint8_t initFilt[3] = {1,1,1};
 
@@ -181,7 +181,7 @@ uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis(uint8_t axis, int16_t in, int32_t *ou
 static const int64_t ac_q27[3] = {134217728, -178407861,  67562416};
 static const int64_t bc_q27[3] = {  5843071,   11686141,   5843071};
 
-uint8_t _rateFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t chip, uint8_t axis, int16_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
+uint8_t _rateFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t chip, uint8_t axis, int32_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
 {
     static uint8_t initFilt[3] = {1,1,1};
 
@@ -249,7 +249,7 @@ uint8_t _rateFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t chip, uint8_t axi
     }
 }
 
-uint8_t _accelFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t chip, uint8_t axis, int16_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
+uint8_t _accelFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t chip, uint8_t axis, int32_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
 {
     static uint8_t initFilt[3] = {1,1,1};
 
@@ -321,7 +321,7 @@ uint8_t _accelFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t chip, uint8_t ax
 static int64_t ac1_q27[2] = {134217728, -58883939};
 static int64_t bc1_q27[2] = { 37666894,  37666894};
 
-uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t axis, int16_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
+uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t axis, int32_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
 {
     static uint8_t initFilt[3] = {1,1,1};
 
@@ -419,7 +419,7 @@ uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t axi
 }
 
 
-uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t axis, int16_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
+uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t axis, int32_t in, int32_t *out, uint8_t freq, uint8_t dataRate)
 {
     static uint8_t initFilt[3] = {1,1,1};
 

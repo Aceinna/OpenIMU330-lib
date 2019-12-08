@@ -49,14 +49,14 @@ limitations under the License.
 
 
 
-extern uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis(uint8_t, int16_t, int32_t *, uint8_t, uint8_t);
-extern uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis(uint8_t, int16_t, int32_t *, uint8_t, uint8_t);
+extern uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis(uint8_t, int32_t, int32_t *, uint8_t, uint8_t);
+extern uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis(uint8_t, int32_t, int32_t *, uint8_t, uint8_t);
 
-extern uint8_t _rateFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t, uint8_t, int16_t, int32_t *, uint8_t, uint8_t);
-extern uint8_t _accelFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t, uint8_t, int16_t, int32_t *, uint8_t, uint8_t);
+extern uint8_t _rateFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t, uint8_t, int32_t, int32_t *, uint8_t, uint8_t);
+extern uint8_t _accelFilt_4thOrderBWF_LowPass_Axis_cascaded2nd(uint8_t, uint8_t, int32_t, int32_t *, uint8_t, uint8_t);
 
-extern uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t, int16_t, int32_t *, uint8_t, uint8_t);
-extern uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t, int16_t, int32_t *, uint8_t, uint8_t);
+extern uint8_t _rateFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t, int32_t, int32_t *, uint8_t, uint8_t);
+extern uint8_t _accelFilt_3rdOrderBWF_LowPass_Axis_cascaded1st(uint8_t chip, uint8_t, int32_t, int32_t *, uint8_t, uint8_t);
 
 #endif
 

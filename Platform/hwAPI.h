@@ -74,7 +74,7 @@ int     TIMER_WaitForNewDacqTick();
 int     TIMER_GetSensToSyncDelay();
 int     TIMER_GetSyncToDrdyDelay();
 void    StartReferenceTimer(int precisionUs);
-void    ConfigureTimerForSyncCapture();
+BOOL    ConfigureTimerForSyncCapture(int freq);
 
 // system related functions
 void    HW_SystemReset(void);
@@ -90,6 +90,9 @@ void    HW_ClearBootSignature();
 
 #define USER_SERIAL_PORT   0
 #define DEBUG_SERIAL_PORT  1
+
+extern int ucbPort;
+extern int debugPort;
 
 extern BOOL fSPI;
 extern BOOL fUART;

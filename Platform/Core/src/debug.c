@@ -45,7 +45,7 @@ limitations under the License.
 //#define PORT_DBG_RX_BUF_SIZE COM_BUF_SIZE // 512
 //#define PORT_DBG_TX_BUF_SIZE COM_BUF_SIZE
 
-
+int debugPort = DEBUG_SERIAL_PORT; 
 
 
 // local version
@@ -55,7 +55,7 @@ void itoa_64bit(int64_t value, char s[], int base);
 void  InitDebugSerialCommunication(int baudrate)
 {
 #ifdef DEBUG_ENABLED
-    UART_Init(DEBUG_SERIAL_PORT, baudrate);
+    UART_Init(debugPort, baudrate);
 #endif
 }
 
@@ -68,7 +68,7 @@ void  InitDebugSerialCommunication(int baudrate)
  *******************************************************************************/
 unsigned char DebugPutChar (unsigned char c)
 { 
-    UART_Write(DEBUG_SERIAL_PORT, &c, 1);
+    UART_Write(debugPort, &c, 1);
     return c;
 }
 
@@ -80,7 +80,7 @@ unsigned char DebugPutChar (unsigned char c)
  *******************************************************************************/
 unsigned char DebugBufferChar (unsigned char c)
 { 
-//    uart_bufferTx(DEBUG_SERIAL_PORT, &c, 1);
+//    uart_bufferTx(debugPort, &c, 1);
     return c;
 }
 
@@ -117,7 +117,7 @@ int DebugReadLine(uint8_t  *buf, uint32_t *index, uint32_t len)
     int num;
 
     while (c != _LF){
-        num = UART_Read(DEBUG_SERIAL_PORT, &c, 1);
+        num = UART_Read(debugPort, &c, 1);
         if(num <= 0){
             break;
         }
@@ -181,7 +181,7 @@ int DebugReadLine(uint8_t  *buf, uint32_t *index, uint32_t len)
  ******************************************************************************/
 void DebugPrintString(const char * str)
 {
-    UART_Write(DEBUG_SERIAL_PORT, (uint8_t*)str, strlen(str));
+    UART_Write(debugPort, (uint8_t*)str, strlen(str));
 }
 
 /** ***************************************************************************

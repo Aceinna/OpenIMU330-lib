@@ -1,7 +1,7 @@
 {
 	"name": "Platform",
- 	"version": "1.0.4",
- 	"description": "OpenIMU330 and IMU383 Platform Library",
+ 	"version": "1.0.5",
+ 	"description": "OpenIMU330 Platform Library",
  	"build": {
  		"flags": [
 			"-I Filter",

@@ -36,12 +36,13 @@ limitations under the License.
 #include "hwAPI.h"
 #include "Indices.h"
 
-ConfigurationStruct gConfiguration;
+FactoryConfigurationStruct gConfiguration;
 extern BITStatusStruct     gBitStatus;
-uint16_t            spiFilterType = 0;  // unfiltered
+uint16_t            spiRateFilterType = 0;   // unfiltered
+uint16_t            spiAccelFilterType = 0;  // unfiltered
 uint16_t            spiPacketRateDividor = 0;  // quiet
 
-BOOL     ValidPortConfiguration(ConfigurationStruct *proposedConfiguration);
+BOOL     ValidPortConfiguration(FactoryConfigurationStruct *proposedConfiguration);
 
 
 uint16_t configGetUsedChips(void)                     { return (gConfiguration.usedChips & gConfiguration.activeChips);}
@@ -191,11 +192,11 @@ void ApplyFactoryConfiguration(void)
     ioupFMversion.stage = VERSION_STAGE;
     ioupFMversion.build = VERSION_BUILD;
 
-    if(gConfiguration.usedChips > 7 || gConfiguration.usedChips == 0 ){
+    if(gConfiguration.usedChips > 7){
         gConfiguration.usedChips = 7;
     }
 
-    if(gConfiguration.activeChips > 7 || gConfiguration.activeChips == 0){
+    if(gConfiguration.activeChips > 7){
         gConfiguration.activeChips = 7;
     }
 
@@ -211,11 +212,6 @@ void configSetUsedSensors(int idx, uint8_t mask)
 {
     gConfiguration.usedSensors[idx]  = 0xffC0;
     gConfiguration.usedSensors[idx] |= mask;
-}
-
-void SetDrdyRate(uint8_t rate)
-{
-    gConfiguration.packetRateDivider = rate;
 }
 
 int configApplyOrientation(uint16_t orientation)
@@ -588,15 +584,26 @@ char *configBuildInfo()
     return SOFTWARE_PART;
 }
 
-uint16_t configGetSensorFilterTypeForSPI()
+uint16_t configGetRateSensorFilterTypeForSPI()
 {
-    return  spiFilterType;
+    return  spiRateFilterType;
+}
+uint16_t  configGetAccelSensorFilterTypeForSPI()
+{
+    return  spiAccelFilterType;
 }
 
-void     configSetSensorFilterTypeForSPI(uint16_t type)
+void     configSetRateSensorFilterTypeForSPI(uint16_t type)
 {
-    spiFilterType = type;
+    spiRateFilterType = type;
 }
+
+void     configSetAccelSensorFilterTypeForSPI(uint16_t type)
+{
+    spiAccelFilterType = type;
+}
+
+
 
 void   configSetPacketRateDividorForSPI(uint16_t dvd)
 {
@@ -697,6 +704,42 @@ uint16_t platformGetParam(uint16_t offset)
     uint16_t *pCfg = (uint16_t*)&gConfiguration;
     return pCfg[offset];
 }
+
+int configGetAccelRange()
+{
+    return gConfiguration.accelRange;
+}
+
+int configGetGyroRange()
+{
+    return gConfiguration.gyroRange;
+}
+
+BOOL configSetAccelRange(int *range, int fApply)
+{
+    if(*range != 8 && *range != 16){
+        return FALSE;
+    }
+    
+    if(fApply){
+        gConfiguration.accelRange = *range;
+    }
+    return TRUE;
+}
+
+BOOL configSetGyroRange(int *range, BOOL fApply)
+{
+    if(*range != 500 && *range != 1000 && *range != 2000){
+        return FALSE;
+    }
+    
+    if(fApply){
+        gConfiguration.gyroRange = *range;;
+    }
+    return TRUE;
+}
+
+
 
 
 /*end void initConfigureUnit(void) */

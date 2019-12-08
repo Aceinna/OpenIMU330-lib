@@ -38,9 +38,9 @@ limitations under the License.
 #endif
 
 /// proposed configurations
-static ConfigurationStruct proposedRamConfiguration;
-static ConfigurationStruct proposedEepromConfiguration;
-ConfigurationStruct *proposedEepromConfigurationPtr = &proposedEepromConfiguration;
+static FactoryConfigurationStruct proposedRamConfiguration;
+static FactoryConfigurationStruct proposedEepromConfiguration;
+FactoryConfigurationStruct *proposedEepromConfigurationPtr = &proposedEepromConfiguration;
 extern void InitUserAlgorithm();
 
 
@@ -259,7 +259,7 @@ BOOL CheckPortBaudRate (uint16_t portBaudRate)
  * @param [in] proposedConfiguration - configuratione
  * @retval 	boolean, TRUE if the packet output is possible, FALSE if not
  ******************************************************************************/
-BOOL ValidPortConfiguration (ConfigurationStruct *proposedConfiguration)
+BOOL ValidPortConfiguration (FactoryConfigurationStruct *proposedConfiguration)
 {
     /// working packet type byte buffer
     UcbPacketType continuousPacketType;
@@ -357,7 +357,7 @@ BOOL CheckOrientation (uint16_t orientation)
  * @param [out] validFields[] - array of fieldId that have been validated.
  * @retval 	number of valid fields returned in validFields[]
  ******************************************************************************/
-static uint8_t CheckFieldData (ConfigurationStruct *currentConfiguration,
+static uint8_t CheckFieldData (FactoryConfigurationStruct *currentConfiguration,
                                uint8_t             numFields,
                                uint16_t            fieldId [],
                                uint16_t            fieldData [],
@@ -371,7 +371,7 @@ static uint8_t CheckFieldData (ConfigurationStruct *currentConfiguration,
     uint8_t             validFieldIndex = 0; ///< index for building valid return array
     uint8_t             type [UCB_PACKET_TYPE_LENGTH]; ///< working packet type byte buffer
     UcbPacketType       continuousPacketType;
-    ConfigurationStruct proposedPortConfig;
+    FactoryConfigurationStruct proposedPortConfig;
 
     /// copy current configuration - for testing validity of port configuration only
     proposedPortConfig = *currentConfiguration;

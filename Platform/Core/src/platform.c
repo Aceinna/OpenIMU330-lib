@@ -30,10 +30,9 @@ limitations under the License.
 #include "platform_version.h"
 #include "board.h"
 #include "timer.h"
+#include "platformAPI.h"
+#include "hwAPI.h"
 
-int     userSerialChan;
-int     gpsSerialChan;
-int     debugSerialChan;
 
 BOOL fSPI  = FALSE;
 BOOL fUART = FALSE;
@@ -41,11 +40,22 @@ BOOL fUART = FALSE;
 BITStatusStruct     gBitStatus;
 
 
+BOOL  platformActivateExternalSync(int freq)
+{
+    // so far support only 1000 and 1 Hz
+    if(freq != 1 && freq != 1000){
+        return FALSE;
+    }
+    board_configure_sync_pin();
+    ConfigureTimerForSyncCapture(freq);
+    return TRUE;
+}
+
 void    platformEnableExternalSync()
 {
-    board_configure_sync_pin();
-    ConfigureTimerForSyncCapture();
+    platformActivateExternalSync(1000);
 }
+
 
 BOOL platformHasMag()
 {
@@ -55,15 +65,6 @@ BOOL platformHasMag()
 
 BOOL _useExtSync = FALSE;
 
-BOOL platformIsExtSyncUsed(void)
-{
-    return _useExtSync;
-}
-
-void platformEnableExtSync(BOOL enable)
-{
-    _useExtSync = enable;
-}
 
 char *platformBuildInfo()
 {
@@ -72,7 +73,7 @@ char *platformBuildInfo()
 
 uint32_t _commType = UART_COMM;
 
-uint32_t platformGetUnitCommunicationType()
+int platformGetUnitCommunicationType()
 {
     return _commType;
 }
@@ -159,6 +160,32 @@ void platformSetMode(BOOL isBoot)
 char *platformGetModelInfo()
 {
     return SOFTWARE_PART;
+}
+
+BOOL platformSetUserSerialPort(int port)
+{
+    if(port != DEBUG_SERIAL_PORT && port != USER_SERIAL_PORT){
+        return FALSE;
+    }
+
+    ucbPort   =  port;
+
+#ifdef DEBUG_ENABLED
+    switch(port){
+        case USER_SERIAL_PORT:
+            debugPort = DEBUG_SERIAL_PORT;
+            break;
+        case DEBUG_SERIAL_PORT:
+            debugPort = USER_SERIAL_PORT;
+            break;
+    }
+#endif
+    return TRUE;
+} 
+
+BOOL     platformInitUserSerialPort(int rate)
+{
+    return UART_Init(ucbPort, rate);
 }
 
 

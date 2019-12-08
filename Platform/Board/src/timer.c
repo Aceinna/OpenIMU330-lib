@@ -29,7 +29,9 @@ limitations under the License.
 #include "board.h"
 #include "osapi.h"
 #include "hwAPI.h"
+#include "stdlib.h"
 
+//#define DEBUG_EXT_SYNC 1
 
 TIM_HandleTypeDef      TimHandle;
 TIM_HandleTypeDef      Tim2Handle;
@@ -40,34 +42,104 @@ BOOL extSync         = FALSE;
 BOOL dacqScheduled   = FALSE; 
 uint64_t systemTmrHi = 0LL;
 uint32_t prevTstamp  = 0;
-uint64_t solutionTstamp = 0;
+uint32_t ticksPerDacq  = 0;
     
+uint64_t solutionTstamp = 0;
+int      syncFreq = 0;
+#define  PPS_FILT_SIZE 8
+uint32_t ppsFiltr[PPS_FILT_SIZE] = {0,0,0,0,0,0,0,0};
+int      syncFltIdx;
+BOOL     syncP, resync;
+int    adjStep = 0;
+int    adjVal  = 0;
+int    adjSign = 1;
+double   ticksPerUs;
+double   ticksPerPps;
+static int     lock1 = 0, lock2 = 0, lock3 = 0;
+
+void calculateSyncPhaseShift();
+void adjustDacqSyncPhase();
+
+
+
+
 void DelayMs(int ms)
 {
     HAL_Delay(ms); 
 }
+
 
 int TIMER_IsDacqOverrun()
 {
   return NewTick;
 }
 
+// timestamp in us
 uint64_t platformGetCurrTimeStamp()
 {
+   
+    ENTER_CRITICAL();
+
     uint32_t tmp = TIM2->CNT;
+	uint64_t tstamp;
+
 	if(tmp < prevTstamp){
 		systemTmrHi += 0x0000000100000000LL;
 	}
 	
 	prevTstamp = tmp;
+    tstamp     = systemTmrHi | tmp; 
+    tstamp     = (uint64_t)((double)tstamp/ticksPerUs + 0.5); 
 
-    return systemTmrHi | tmp;
+    EXIT_CRITICAL();
+    
+    return tstamp;
 }
+
+// timestamp in us
+uint64_t platformGetCurrTimeStampFromIsr()
+{
+    uint32_t tmp = TIM2->CNT;
+	uint64_t tstamp;
+
+    if(tmp < prevTstamp){
+		systemTmrHi += 0x0000000100000000LL;
+	}
+	
+	prevTstamp = tmp;
+    tstamp     = systemTmrHi | tmp; 
+    
+    return (uint64_t)((double)tstamp/ticksPerUs + 0.5);
+}
+
+uint64_t platformGetFullTimeStampFromIsr()
+{
+    uint32_t tmp = TIM2->CNT;
+	uint64_t tstamp;
+
+    if(tmp < prevTstamp){
+		systemTmrHi += 0x0000000100000000LL;
+	}
+	
+	prevTstamp = tmp;
+    tstamp     = systemTmrHi | tmp; 
+    
+    return tstamp;
+}
+
+
 
 uint64_t platformGetSolutionTstamp()
 {
     return solutionTstamp;
 }
+
+// resolution 1 uS
+double   platformGetSolutionTstampAsDouble()
+{
+    return (double)solutionTstamp/ticksPerUs;
+}
+
 
 
 int TIMER_WaitForNewDacqTick()
@@ -85,14 +157,18 @@ int InitDacqTimer(int freq)
 {
     int res;
 
+    ticksPerPps  = SystemCoreClock;
+    ticksPerUs   = (double)SystemCoreClock/1000000;
+    ticksPerDacq = (uint32_t)(SystemCoreClock / (freq*8));
     TIM7_CLK_ENABLE();
 
     TimHandle.Instance               = TIM7;
-    TimHandle.Init.Period            = (uint32_t)(SystemCoreClock / (freq*8));
+    TimHandle.Init.Period            =  ticksPerDacq;
     TimHandle.Init.Prescaler         = 7;
     TimHandle.Init.ClockDivision     = 0;
     TimHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
     TimHandle.Init.RepetitionCounter = 0;
+    TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
     
     HAL_NVIC_SetPriority(TIM7_IRQn, 3, 0);
     
@@ -163,6 +239,9 @@ void TIM7_IRQHandler(void)
 uint64_t activeSyncEdgeTstamp = 0LL;
 uint64_t activeDrdyEdgeTstamp = 0LL;
 uint64_t sensorSamplingTstamp = 0LL;
+uint64_t ppsTstamp            = 0LL;
+uint64_t dacqTickTimeStamp    = 0LL;
+uint64_t dacqPpsTimeStamp     = 0LL;
 
 int TIMER_GetSensToSyncDelay()
 {
@@ -179,12 +258,19 @@ int TIMER_GetSyncToDrdyDelay()
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if(htim == &TimHandle && !extSync){
-        sensorSamplingTstamp = platformGetCurrTimeStamp();
+        dacqTickTimeStamp    = platformGetFullTimeStampFromIsr();
+        if(ppsTstamp){
+            dacqPpsTimeStamp  = ppsTstamp;
+            ppsTstamp         = 0;
+            calculateSyncPhaseShift();
+        }
+        adjustDacqSyncPhase();
+        sensorSamplingTstamp = platformGetCurrTimeStampFromIsr();
         NewTick = 1;
         dacqScheduled = TRUE;
     }
     if(htim == &TimdHandle){
-        activeDrdyEdgeTstamp = platformGetCurrTimeStamp();
+        activeDrdyEdgeTstamp = platformGetCurrTimeStampFromIsr();
     }
 }
 
@@ -196,8 +282,8 @@ void TIM6_DAC_IRQHandler(void)
 }
 
 
-int  oneKHzUpperLimit;
-int  oneKHzLowerLimit;
+int  upperLimit;
+int  lowerLimit;
 
 void StartReferenceTimer(int precisionUs)
 {
@@ -235,12 +321,14 @@ uint32_t GetSensorSamplingTstamp()
 }
 
 
-void ConfigureTimerForSyncCapture()
+BOOL ConfigureTimerForSyncCapture(int freq)
 {
   TIM_IC_InitTypeDef   sICConfig;
 
-  oneKHzUpperLimit =  (int)((double)SystemCoreClock*1.001/1000 + 0.5);   // +0.1% vs system clock
-  oneKHzLowerLimit =  (int)((double)SystemCoreClock*0.999/1000 + 0.5);   // -0.1% vs system clock
+  syncFreq = freq;
+
+  upperLimit =  (int)((double)SystemCoreClock*1.001/freq + 0.5);   // +0.1% vs system clock
+  lowerLimit =  (int)((double)SystemCoreClock*0.999/freq + 0.5);   // -0.1% vs system clock
 
   TIM2_CLK_ENABLE();
   
@@ -279,6 +367,9 @@ void ConfigureTimerForSyncCapture()
   HAL_NVIC_SetPriority(TIM2_IRQn, 0, 1);
   /* Enable the TIM2 global Interrupt */
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+  return TRUE;
+
 }
 
 
@@ -303,9 +394,95 @@ void TIM2_IRQHandler(void)
 
 extern int getPacketRateDivider();
 
-int capLog[32];
+#ifdef DEBUG_EXT_SYNC
+#define NUM_RECORDS 64
+int signLog[NUM_RECORDS];
+int adjLog[NUM_RECORDS];
+int deltaLog[NUM_RECORDS];
 int logPtr = 0;
-uint32_t ppsTstamp = 0; 
+#endif
+
+//uint32_t syncPulseTimeStamp = 0, syncPulsePeriod = 0;
+static int    refDelta = 200;
+
+void adjustDacqSyncPhase()
+{
+    int      offset = 0;
+    uint32_t ddd;
+//    static int cnt = 0;
+
+    // no valid sync pulse detected
+    // keep ols settings
+
+    if(!syncP){
+        return;
+    }
+
+    ddd = ticksPerPps/1600 + 0.5 + adjStep;     // adjStep * 0.1 uS
+    if(adjVal){
+        // 1Us per tick
+        offset = adjSign;
+        adjVal -= 1;
+        ddd += offset;
+    }
+
+    TIM7->ARR = ddd;
+}
+
+void calculateSyncPhaseShift()
+{
+
+    int delta = dacqTickTimeStamp - dacqPpsTimeStamp; 
+
+
+    if(!lock1){
+        if(delta < 16000){  // about 200 uS
+            // try to properly position phase shift
+            adjStep = 20;   // 400 uS per second
+        }else{
+            lock1    = 1;
+            adjStep  = -10; // -200 uS per second
+        }
+    }else if(!lock2){
+        if(delta > 8000){     // aboit 100 uS
+                adjStep = -3; // -60 uS per second
+        }else {
+            lock2   = 1;
+            adjStep = -1;
+        }
+    }else if(!lock3){
+        if(delta > 4000){  // about 50 uS
+            adjStep = -1;  // -60 uS per second
+            adjVal  = 50;  // -60 uS per second
+            adjSign = -1;  // about  
+        }else{
+            lock3   = 1;
+            adjStep = -1;  // -60 uS per second
+            adjVal  = 50;  // -60 uS per second
+        }
+    }else{
+        adjStep = -1;
+        adjVal  = 5;       // about 0.5 uS/second 
+        if(delta > 2000){   // 25 uS
+            adjSign = -1;    // about  
+        }else{
+            adjSign = 1;
+        }
+    }
+
+#ifdef DEBUG_EXT_SYNC
+    adjLog[logPtr]    = adjStep;
+    deltaLog[logPtr]  = delta;
+    signLog[logPtr]   = adjSign;
+    logPtr  += 1;
+    logPtr  &= 0x3f; 
+#endif
+
+}                
+
+
+
+
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
@@ -314,20 +491,25 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
     static uint32_t prevCap = 0;
     uint32_t curCap;
     static volatile int diff;
+    static int          delta1 = 0;
+    static uint32_t     cnt = 0;
+    static uint32_t     syncPeriod = 0, syncAvg = 0, synced = 0;
+    static int          syncCnt = 0;
 
     if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2 ){
         curCap  = TIM2->CCR2;
-        if(!extSync){
+        if(!synced){
             diff    = curCap - prevCap;
-            capLog[logPtr++] = diff;
-            logPtr  &= 0x1f; 
             prevCap = curCap;
-            if(diff < oneKHzUpperLimit && diff > oneKHzLowerLimit){
-			// 10 consequtive matches
+            if(diff < upperLimit && diff > lowerLimit){
+			    // 5 consequtive matches
                 count++;
-                if(count >= 10 && dacqScheduled){
+                if(count >= 5 && dacqScheduled){
                     //switch right after last dacq interval was cheduled 
+                    synced = 1;
+                    if(syncFreq == 1000){
                     extSync = TRUE;
+                    }
                     count       = 0;
                 }else {
                     dacqScheduled = FALSE;
@@ -337,17 +519,60 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
             }
         }else{
            //sync achieved - start to sync system from external signal
+            if(syncFreq == 1000){
            ++count;
            if(count >= refCounter){
                count       = 0;
                 restarted  = 1;
                 NewTick = 1;
-                sensorSamplingTstamp = platformGetCurrTimeStamp();
-                activeSyncEdgeTstamp = platformGetCurrTimeStamp();
+                    sensorSamplingTstamp = platformGetCurrTimeStampFromIsr();
+                    activeSyncEdgeTstamp = platformGetCurrTimeStampFromIsr();
            }
            if(count == 1 && restarted){
                 restarted = 0;
            }
+            }
+            if(syncFreq == 1){
+                while(1){
+                    // delta between two periods of sync signal 
+                    if(!prevCap){
+                        prevCap = curCap; 
+                        break;
+                    }
+                    delta1  = curCap - prevCap;
+                    prevCap = curCap; 
+
+                    if (delta1 < lowerLimit || delta1 > upperLimit){
+                        // disregard pulse and use previous numbers; 
+                        resync   = 1;
+                        syncP    = TRUE; 
+                        refDelta = 0;
+                        break;
+                    }
+                    ppsTstamp            = platformGetFullTimeStampFromIsr();
+                    syncAvg             -= ppsFiltr[syncFltIdx];
+                    ppsFiltr[syncFltIdx] = delta1;
+                    syncFltIdx++;
+                    syncFltIdx          &= 0x7;
+                    syncAvg             += delta1;
+                    if(syncCnt < PPS_FILT_SIZE){
+                        syncCnt ++;
+                        syncPeriod = delta1;
+                    }else {
+                        syncPeriod = syncAvg >> 3;    // divide by 8
+                    }
+                    ticksPerPps = syncPeriod;
+                    ticksPerDacq = syncPeriod/200;
+                    ticksPerUs  = (double)syncPeriod/1000000;
+                    syncPeriod >>=3;                  // divide by 8 to scale to reload period for tim7 
+                    syncP  = TRUE; 
+                    resync = 1;
+//                    calculateSyncPhaseShift();
+//                syncPulseTimeStamp = cap;
+                    cnt ++;
+                    break;
+                }
+            }
         }
     }
 }
